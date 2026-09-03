@@ -1,5 +1,3 @@
-# mobile-finance-app
-
 # ƒinatics
 
 A mobile stock quote tracker built with Expo and React Native. Search for a ticker, get live pricing from the Finnhub API, and build up a running watchlist of the symbols you're following.
