@@ -3,7 +3,7 @@
 A mobile stock quote tracker built with Expo and React Native. Search for a ticker, get live pricing from the Finnhub API, and build up a running watchlist of the symbols you're following.
 
 <p align="center">
-  <img src="docs/screenshot.png" alt="ƒinatics watchlist showing live quotes for QQQ, NVDA and AAPL" width="320">
+  <img src="docs/screenshot.png" alt="ƒinatics searching for QQQ, with live quotes for QQQ, NVDA and AAPL in the watchlist" width="320">
 </p>
 
 ## What it does
