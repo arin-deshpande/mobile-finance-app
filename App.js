@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
   StyleSheet,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 const FINNHUB_API_KEY = process.env.EXPO_PUBLIC_FINNHUB_API_KEY;
+const SUGGESTION_DEBOUNCE_MS = 300;
 
 async function fetchQuote(symbol) {
   const trimmedSymbol = symbol.trim().toUpperCase();
@@ -49,6 +50,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
+  const debounceTimer = useRef(null);
+  const latestRequest = useRef(0);
 
   const handleSearch = async (symbolOverride) => {
     const term = (symbolOverride ?? query).trim();
@@ -90,25 +93,35 @@ export default function App() {
     setQuotes((prev) => prev.filter((q) => q.symbol !== symbolToRemove));
   };
 
-  const handleChangeText = async (text) => {
+  // Clear any pending suggestion lookup when the app unmounts
+  useEffect(() => () => clearTimeout(debounceTimer.current), []);
+
+  const handleChangeText = (text) => {
     setQuery(text);
+    clearTimeout(debounceTimer.current);
 
     const trimmed = text.trim();
     if (!trimmed) {
+      latestRequest.current += 1;
       setSuggestions([]);
       return;
     }
 
-    try {
-      const data = await fetchSuggestions(trimmed);
-      const cleaned = (data.result || [])
-        .filter((item) => item.symbol && item.description)
-        .slice(0, 5);
-      setSuggestions(cleaned);
-    } catch (e) {
-      // If suggestions fail, just clear them silently
-      setSuggestions([]);
-    }
+    // Wait until typing pauses before hitting the search endpoint
+    debounceTimer.current = setTimeout(async () => {
+      const requestId = ++latestRequest.current;
+      try {
+        const data = await fetchSuggestions(trimmed);
+        if (requestId !== latestRequest.current) return; // a newer search replaced this one
+        const cleaned = (data.result || [])
+          .filter((item) => item.symbol && item.description)
+          .slice(0, 5);
+        setSuggestions(cleaned);
+      } catch (e) {
+        // If suggestions fail, just clear them silently
+        if (requestId === latestRequest.current) setSuggestions([]);
+      }
+    }, SUGGESTION_DEBOUNCE_MS);
   };
 
   return (
@@ -141,6 +154,8 @@ export default function App() {
                   style={styles.suggestionRow}
                   onPress={() => {
                     const sym = item.symbol;
+                    clearTimeout(debounceTimer.current);
+                    latestRequest.current += 1;
                     setQuery(sym);
                     setSuggestions([]);
                     handleSearch(sym);
