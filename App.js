@@ -12,7 +12,7 @@ import {
   ScrollView
 } from 'react-native';
 
-const FINNHUB_API_KEY = 'd4dcf8hr01qovljp44fgd4dcf8hr01qovljp44g0';
+const FINNHUB_API_KEY = process.env.EXPO_PUBLIC_FINNHUB_API_KEY;
 
 async function fetchQuote(symbol) {
   const trimmedSymbol = symbol.trim().toUpperCase();
